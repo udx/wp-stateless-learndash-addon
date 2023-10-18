@@ -18,33 +18,20 @@ class ClassLearnDashTest extends TestCase {
   // Adds Mockery expectations to the PHPUnit assertions count.
   use MockeryPHPUnitIntegration;
 
-  const TEST_URL = 'https://test.test/elementor';
-  const UPLOADS_URL = self::TEST_URL . '/uploads';
-  const CSS_FILE = 'post-15.css';
-  const SRC_URL = self::UPLOADS_URL . '/' . self::CSS_FILE;
-  const DST_URL = WPStatelessStub::TEST_GS_HOST . '/' . self::CSS_FILE;
-  const TEST_UPLOAD_DIR = [
-    'baseurl' => self::UPLOADS_URL,
-    'basedir' => '/var/www/uploads'
-  ];
+  const TEST_LD_FILE = 'sfwd-file.ext';
+  const TEST_FILE = 'file.ext';
+
+  private static $debugBacktrace;
+
+  public static function getDebugBacktrace() {
+    return self::$debugBacktrace;
+  }
 
   public function setUp(): void {
 		parent::setUp();
 		Monkey\setUp();
 
-    // WP mocks
-    Functions\when('wp_get_upload_dir')->justReturn( self::TEST_UPLOAD_DIR );
-    Functions\when('wp_upload_dir')->justReturn( self::TEST_UPLOAD_DIR );
-    Functions\when('attachment_url_to_postid')->justReturn( 15 );
-        
-    // WP_Stateless mocks
-    Filters\expectApplied('wp_stateless_file_name')
-      ->andReturn( self::CSS_FILE );
-
-    Filters\expectApplied('wp_stateless_handle_root_dir')
-      ->andReturn( 'uploads' );
-
-    Functions\when('ud_get_stateless_media')->justReturn( WPStatelessStub::instance() );
+    self::$debugBacktrace = [];
   }
 
   public function tearDown(): void {
@@ -53,93 +40,44 @@ class ClassLearnDashTest extends TestCase {
 	}
 
   public function testShouldInitModule() {
-    $elementor = new Elementor();
-    $elementor->module_init([]);
+    $learndash = new LearnDash();
 
-    self::assertNotFalse( has_action('elementor/core/files/clear_cache', [ $elementor, 'delete_elementor_files' ]) );
-    self::assertNotFalse( has_action('save_post', [ $elementor, 'delete_css_files' ]) );
-    self::assertNotFalse( has_action('deleted_post', [ $elementor, 'delete_css_files' ]) );
-    self::assertNotFalse( has_action('sm::pre::sync::nonMediaFiles', [ $elementor, 'filter_css_file' ]) );
+    $learndash->module_init([]);
     
-    self::assertNotFalse( has_filter('set_url_scheme', [ $elementor, 'sync_rewrite_url' ]) );
-    self::assertNotFalse( has_filter('elementor/settings/general/success_response_data', [ $elementor, 'delete_global_css' ]) );
+    self::assertNotFalse( has_filter('stateless_skip_cache_busting', [ $learndash, 'skip_cache_busting' ]) );
   }
 
-  public function testShouldSyncAndRewriteUrl() {
-    $elementor = new Elementor();
-
-    Actions\expectDone('sm:sync::syncFile')->times(2);
+  public function testShouldSkipCacheBusting() {
+    $learndash = new LearnDash();
 
     $this->assertEquals(
-      self::DST_URL, 
-      $elementor->sync_rewrite_url(self::SRC_URL, 1, 1)
+      self::TEST_LD_FILE, 
+      $learndash->skip_cache_busting('test', self::TEST_LD_FILE)
     );
 
-    ud_get_stateless_media()->set('sm.mode', 'disabled');
+    self::$debugBacktrace = [
+      '6' => [
+        'function' => 'sanitize_file_name',
+        'file' => 'dir/class-ld-semper-fi-module.php',
+      ]
+    ];
 
     $this->assertEquals(
-      self::SRC_URL, 
-      $elementor->sync_rewrite_url(self::SRC_URL, 1, 1)
-    );
-  }
-
-  public function testShouldDeleteElementorFiles() {
-    $elementor = new Elementor();
-
-    Actions\expectDone('sm:sync::deleteFiles')->once();
-
-    $elementor->delete_elementor_files();
-
-    // Need any assertion, otherwise the test will be skipped
-    $this->assertTrue(true);
-  }
-
-  public function testShouldDeleteCssFiles() {
-    $elementor = new Elementor();
-
-    Functions\when('current_action')->justReturn( 'deleted_post' );
-
-    Actions\expectDone('sm:sync::deleteFile')
-      ->with(self::CSS_FILE)
-      ->once();
-
-    $elementor->delete_css_files(15, null, true);
-
-    // Need any assertion, otherwise the test will be skipped
-    $this->assertTrue(true);
-  }
-
-  public function testShouldDeleteGlobalCss() {
-    $elementor = new Elementor();
-
-    Actions\expectDone('sm:sync::deleteFile')
-      ->with(self::CSS_FILE)
-      ->once();
-
-    $this->assertEquals(
-      self::TEST_URL, 
-      $elementor->delete_global_css(self::TEST_URL, 15, null)
+      self::TEST_FILE, 
+      $learndash->skip_cache_busting('test', self::TEST_FILE)
     );
   }
 
-  public function testShouldFilterCssFile() {
-    $elementor = new Elementor();
+  public function testShouldNotSkipCacheBusting() {
+    $learndash = new LearnDash();
 
-    /**
-     * To make this fully testable need to find the way to redefine file_put_contents and check result 
-     */
-
-    $elementor->filter_css_file(self::CSS_FILE, self::SRC_URL);
-
-    // Need any assertion, otherwise the test will be skipped
-    $this->assertTrue(true);
+    $this->assertEquals(
+      'test', 
+      $learndash->skip_cache_busting('test', self::TEST_FILE)
+    );
   }
 }
 
-function file_exists() {
-  return true;
-}
-
-function file_get_contents() {
-  return ClassElementorTest::SRC_URL;
+function debug_backtrace() {
+  return ClassLearnDashTest::getDebugBacktrace();
 }

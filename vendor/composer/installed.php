@@ -3,7 +3,7 @@
         'name' => 'udx/wp-stateless-learndash-addon',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'fe711465652cc7a8bc70758e38354f713a402000',
+        'reference' => 'd8310a159bbc78f76c95f339931144620f7030a3',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -319,7 +319,7 @@
         'udx/wp-stateless-learndash-addon' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'fe711465652cc7a8bc70758e38354f713a402000',
+            'reference' => 'd8310a159bbc78f76c95f339931144620f7030a3',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -14,10 +14,7 @@ namespace wpCloud\StatelessMedia {
       return static::$instance ? static::$instance : static::$instance = new static;
     }
   
-    public $options = [
-      'sm.root_dir' => 'uploads',
-      'sm.mode' => 'cdn',
-    ];
+    public $options = [];
   
     public function set($key, $value): void {
       $this->options[$key] = strval($value);
@@ -26,17 +23,9 @@ namespace wpCloud\StatelessMedia {
     public function get($key): ?string {
       return $this->options[$key];
     }
-
-    public function replaceable_file_types() {
-      return '\.css';
-    } 
   
     public function get_gs_host(): string {
       return self::TEST_GS_HOST;
     }
   }
-  
-  class Utility {
-    public static function add_media($a, $b, $c) {}
-  }  
 };
